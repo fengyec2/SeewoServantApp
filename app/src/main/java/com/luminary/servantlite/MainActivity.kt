@@ -1,6 +1,12 @@
 package com.luminary.servantlite
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -33,6 +39,9 @@ class MainActivity : AppCompatActivity() {
 
         notificationHelper = NotificationHelper(this)
 
+        // 申请忽略电池优化权限，提升后台存活率
+        requestIgnoreBatteryOptimization()
+
         btnSaveConnect.setOnClickListener {
             val ip = etServerIp.text.toString().trim()
             val port = etServerPort.text.toString().trim()
@@ -43,11 +52,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             serverUrl = "ws://$ip:$port"
+
+            // 启动前台服务，保证后台运行
+            startForegroundService()
+
             startWebSocket()
         }
 
         btnDisconnect.setOnClickListener {
             stopWebSocket()
+            stopForegroundService()
         }
     }
 
@@ -61,7 +75,7 @@ class MainActivity : AppCompatActivity() {
             onMessageReceived = { message ->
                 runOnUiThread {
                     tvMessage.text = message
-                    notificationHelper.showNotification("紧急通知", message)
+                    notificationHelper.showNotification("服务器消息", message)
                 }
             },
             onStatusChanged = { status ->
@@ -93,8 +107,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun startForegroundService() {
+        val serviceIntent = Intent(this, ForegroundService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
+    }
+
+    private fun stopForegroundService() {
+        val serviceIntent = Intent(this, ForegroundService::class.java)
+        stopService(serviceIntent)
+    }
+
+    private fun requestIgnoreBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         stopWebSocket()
+        stopForegroundService()
     }
 }
