@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             val port = etServerPort.text.toString().trim()
 
             if (ip.isEmpty() || port.isEmpty()) {
-                tvStatus.text = "请输入有效的IP和端口"
+                tvStatus.text = getString(R.string.ip_or_port_invalid)
                 return@setOnClickListener
             }
 

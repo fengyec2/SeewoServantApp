@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">ServantLite</string>
+    <string name="save_and_connect">保存并连接</string>
+    <string name="server_ip">服务器IP地址</string>
+    <string name="default_ip">192.168.137.1</string>
+    <string name="server_port">端口号</string>
+    <string name="default_port">8765</string>
+    <string name="disconnected">未连接</string>
+    <string name="messages_displayed">消息将显示在这里</string>
+    <string name="disconnect">断开连接</string>
+    <string name="ip_or_port_invalid">请输入有效的IP和端口</string>
 </resources>
