@@ -1,28 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:gravity="center"
+    android:padding="24dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <EditText
-        android:id="@+id/etIp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="监听IP（默认0.0.0.0）"
-        android:inputType="text"/>
+    <TextView
+        android:id="@+id/tvStatus"
+        android:text="未连接"
+        android:textSize="18sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
-    <EditText
-        android:id="@+id/etPort"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="监听端口"
-        android:inputType="number"/>
+    <TextView
+        android:id="@+id/tvMessage"
+        android:text="消息将显示在这里"
+        android:textSize="16sp"
+        android:layout_marginTop="16dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
     <Button
-        android:id="@+id/btnSave"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="保存设置并启动监听"/>
+        android:id="@+id/btnConnect"
+        android:text="连接服务器"
+        android:layout_marginTop="24dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
+    <Button
+        android:id="@+id/btnDisconnect"
+        android:text="断开连接"
+        android:enabled="false"
+        android:layout_marginTop="12dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 </LinearLayout>

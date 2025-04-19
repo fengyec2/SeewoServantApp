@@ -1,106 +1,74 @@
 package com.luminary.servantlite
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.widget.Button
-import android.widget.EditText
-import androidx.appcompat.app.AlertDialog
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var prefs: PrefsHelper
-    private val REQUEST_NOTIFICATION = 1001
+
+    private lateinit var tvStatus: TextView
+    private lateinit var tvMessage: TextView
+    private lateinit var btnConnect: Button
+    private lateinit var btnDisconnect: Button
+
+    private lateinit var notificationHelper: NotificationHelper
+    private var webSocketClient: WebSocketClient? = null
+
+    // 替换成你PC的局域网IP和端口
+    private val serverUrl = "ws://192.168.137.1:8765"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        prefs = PrefsHelper(this)
-        setupUI()
-        requestNotificationPermission()
-        startService()
-    }
+        tvStatus = findViewById(R.id.tvStatus)
+        tvMessage = findViewById(R.id.tvMessage)
+        btnConnect = findViewById(R.id.btnConnect)
+        btnDisconnect = findViewById(R.id.btnDisconnect)
 
-    private fun setupUI() {
-        findViewById<EditText>(R.id.etIp).setText(prefs.listenIp)
-        findViewById<EditText>(R.id.etPort).setText(prefs.listenPort.toString())
+        notificationHelper = NotificationHelper(this)
 
-        findViewById<Button>(R.id.btnSave).setOnClickListener {
-            saveSettings()
-            restartService()
+        btnConnect.setOnClickListener {
+            startWebSocket()
+            btnConnect.isEnabled = false
+            btnDisconnect.isEnabled = true
+            tvStatus.text = "连接中..."
+        }
+
+        btnDisconnect.setOnClickListener {
+            stopWebSocket()
+            btnConnect.isEnabled = true
+            btnDisconnect.isEnabled = false
+            tvStatus.text = "已断开"
         }
     }
 
-    private fun saveSettings() {
-        prefs.listenIp = findViewById<EditText>(R.id.etIp).text.toString()
-        prefs.listenPort = findViewById<EditText>(R.id.etPort).text.toString().toIntOrNull() ?: 8888
-    }
-
-    private fun startService() {
-        val serviceIntent = Intent(this, UdpListenerService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
-    }
-
-    private fun restartService() {
-        val stopIntent = Intent(this, UdpListenerService::class.java)
-        stopService(stopIntent)
-        startService()
-    }
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    // Permission already granted
+    private fun startWebSocket() {
+        webSocketClient = WebSocketClient(
+            serverUrl,
+            onMessageReceived = { message ->
+                runOnUiThread {
+                    tvMessage.text = message
+                    notificationHelper.showNotification("紧急通知", message)
                 }
-                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
-                    showPermissionRationaleDialog()
-                }
-                else -> {
-                    requestPermission()
+            },
+            onStatusChanged = { status ->
+                runOnUiThread {
+                    tvStatus.text = status
                 }
             }
-        }
+        )
+        webSocketClient?.connect()
     }
 
-    private fun showPermissionRationaleDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("需要通知权限")
-            .setMessage("此应用需要通知权限来显示UDP消息提醒")
-            .setPositiveButton("确定") { _, _ ->
-                requestPermission()
-            }
-            .show()
+    private fun stopWebSocket() {
+        webSocketClient?.disconnect()
+        webSocketClient = null
     }
 
-    private fun requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestPermissions(
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_NOTIFICATION
-            )
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            REQUEST_NOTIFICATION -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // 权限已授予
-                }
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        stopWebSocket()
     }
 }
