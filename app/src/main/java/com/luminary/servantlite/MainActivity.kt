@@ -26,6 +26,11 @@ class MainActivity : AppCompatActivity() {
 
     private var serverUrl: String = ""
 
+    // SharedPreferences 名称和键名
+    private val PREFS_NAME = "server_prefs"
+    private val KEY_IP = "server_ip"
+    private val KEY_PORT = "server_port"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -39,6 +44,9 @@ class MainActivity : AppCompatActivity() {
 
         notificationHelper = NotificationHelper(this)
 
+        // 读取保存的IP和端口，赋值到输入框
+        loadSavedServerInfo()
+
         // 申请忽略电池优化权限，提升后台存活率
         requestIgnoreBatteryOptimization()
 
@@ -50,6 +58,9 @@ class MainActivity : AppCompatActivity() {
                 tvStatus.text = getString(R.string.ip_or_port_invalid)
                 return@setOnClickListener
             }
+
+            // 保存输入的IP和端口
+            saveServerInfo(ip, port)
 
             serverUrl = "ws://$ip:$port"
 
@@ -63,6 +74,22 @@ class MainActivity : AppCompatActivity() {
             stopWebSocket()
             stopForegroundService()
         }
+    }
+
+    private fun loadSavedServerInfo() {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedIp = prefs.getString(KEY_IP, "")
+        val savedPort = prefs.getString(KEY_PORT, "")
+        etServerIp.setText(savedIp)
+        etServerPort.setText(savedPort)
+    }
+
+    private fun saveServerInfo(ip: String, port: String) {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString(KEY_IP, ip)
+            .putString(KEY_PORT, port)
+            .apply()
     }
 
     private fun startWebSocket() {
